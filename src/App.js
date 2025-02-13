@@ -1,23 +1,18 @@
-import logo from './logo.svg';
+import React from 'react';
 import './App.css';
+import GrafoComponent from './Componente/Grafo';
 
 function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
+        <h1>Bienvenido a la Aplicación de Grafo</h1>
         <p>
-          Edit <code>src/App.js</code> and save to reload.
+          Puedes crear nodos haciendo doble clic en el área de trabajo.
         </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
       </header>
+      {/* Aquí insertamos el componente del grafo */}
+      <GrafoComponent />
     </div>
   );
 }
