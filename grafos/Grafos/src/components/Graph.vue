@@ -1,28 +1,19 @@
- <!-- 12/02 Osorio -->
-
 <template>
-  <div class="container">
-    <transition name="fade" appear>
-      <div v-if="showIntro" class="intro">
-        <img src="https://i0.wp.com/lpz.ucb.edu.bo/wp-content/uploads/2024/05/UCB-Ereccion-Canonica_Escudo-01.png?resize=1080%2C1450&ssl=1" class="logo" alt="UCB Logo" />
-        <h1 class="ucb-name">{{ typedUCB }}</h1>
-        <h2 class="full-name">{{ typedFullName }}</h2>
-      </div>
-    </transition>
-
-    <!-- Canvas -->
-    <div id="graph" class="graph"></div>
-
-    <!-- Ociones -->
-    <div class="controls">
-      <!-- Contenedor de Opciones -->
-      <div class="button-container">
-        <button @click="clearGraph" class="btn">Limpiar todo</button>
-        <button @click="generateAdjacencyMatrix" class="btn">Matriz Adyacente</button>
-        <button @click="showHelp" class="btn">Ayuda</button>
-      </div>
-
-      <!-- Matriz -->
+  <div class="whole">
+    <div class="optionsMenu">
+      <v-btn variant="tonal" @click="triggerAddNode">Añadir Nodo</v-btn>
+      <v-btn variant="tonal" @click="triggerAddEdge">Añadir Arista</v-btn>
+      <v-btn variant="tonal" @click="editNode">Editar Nodo</v-btn>
+      <v-btn variant="tonal" @click="editEdge">Editar Arista</v-btn>
+      <v-btn variant="tonal" @click="generateAdjacencyMatrix">Matriz</v-btn>
+      <v-btn variant="tonal" @click="remove">Eliminar</v-btn>
+      <v-btn variant="tonal" @click="clearGraph">Eliminar Todo</v-btn>
+      <input type="file" @change="importGraph" class="v-btn" />
+      <v-btn variant="tonal" @click="exportGraph">Exportar</v-btn>
+    </div>
+    
+    <div class="lienzo">
+      <div id="graph" class="graph"></div>
       <div v-if="matrixVisible" class="matrix">
         <h3>Matriz Adyacente</h3>
         <table>
@@ -34,56 +25,24 @@
           </thead>
           <tbody>
             <tr v-for="(row, index) in adjacencyMatrix" :key="index">
-              <td>{{ nodes[index]?.label}}</td> <!-- añade la columna por nodo ;D -->
-              <td v-for="(value,colIndex) in row" :key="colIndex">
-                <span>{{ value!== 0 ? value : '' }}</span>
+              <td>{{ nodes[index]?.label}}</td> 
+              <td v-for="(value, colIndex) in row" :key="colIndex">
+                <span>{{ value }}</span>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-
-      <!-- Boton de Ayuda -->
-      <div v-if="helpVisible" class="help-modal">
-        <h2>Ayuda</h2>
-        <ul>
-          <li><strong>Editar:</strong> Abre las opciones para ingresar datos al gráfico.</li>
-          <li><strong>Añadir nodo:</strong> Crea un nodo nuevo en el gráfico y te permite ingresar un nombre y seleccionar un color.</li>
-          <li><strong>Añadir arista:</strong> Crea un arco dirigido entre dos nodos seleccionados y solicita el peso del arco.</li>
-          <li><strong>Eliminar:</strong> Permite eliminar nodos o arcos seleccionados del gráfico.</li>
-          <li><strong>Manipulation Toolbar:</strong> La barra de herramientas de manipulación permite interactuar con el gráfico de manera más dinámica:
-        <ul>
-          <li><strong>Limpiar todo:</strong> Elimina todos los nodos, arcos y la matriz de adyacencia, dejando el gráfico vacío.</li>
-        <li><strong>Mover nodos:</strong> Permite mover los nodos dentro del área de visualización para una mejor organización del gráfico.</li>
-        <li><strong>Seleccionar nodos:</strong> Permite seleccionar nodos en el gráfico para editarlos o eliminarlos.</li>
-        <li><strong>Matriz Adyacente:</strong> Muestra la matriz de adyacencia que representa las conexiones entre los nodos del gráfico, indicando si existe una arista entre dos nodos y su peso.</li>
-        </ul>
-        </li>
-        </ul>
-
-        <button @click="showHelp" class="close-btn">Cerrar</button>
-      </div>
     </div>
   </div>
 </template>
 
-<script>
+<script lang="js">
 import { Network } from "vis-network/standalone";
-import gsap from "gsap";
 
 export default {
   data() {
     return {
-
-      showIntro: true,
-      showLogin: false,
-      typedUCB: "",
-      typedFullName: "",
-      ucbText: "UCB",
-      fullNameText : "Analisis de algoritmos",
-  
-
-
       nodes: [],
       edges: [],
       adjacencyMatrix: [],
@@ -93,44 +52,44 @@ export default {
       nodeColor: "#ff0000", 
     };
   },
+
   mounted() {
-    this.animateIntro();
     this.createNetwork();
   },
-  methods: {
 
-    async animateIntro() {
-      gsap.from(".logo", { opacity: 0, scale: 0.8, duration: 1.5, ease: "power4.out" });
-      await this.typeText("ucbText", "typedUCB", 150);
-      gsap.to(".ucb-name", { textShadow: "0px 0px 0px #ffd700", duration: 0.8 });
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      await this.typeText("fullNameText", "typedFullName", 100);
-      setTimeout(() => {
-        gsap.to(".intro", {
-          opacity: 0,
-          scale: 0.9,
-          duration: 1.5,
-          ease: "power3.inOut",
-          onComplete: () => {
-            this.showIntro = false;
-            this.showLogin = true;
-          },
-        });
-      }, 2000);
+  methods: {
+    exportGraph() {
+    const graphData = {
+      nodes: this.nodes,
+      edges: this.edges,
+    };
+    const json = JSON.stringify(graphData, null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "grafo.json";
+    link.click();
+    URL.revokeObjectURL(url);
     },
-    async typeText(sourceKey, targetKey, delay) {
-      for (let i = 0; i < this[sourceKey].length; i++) {
-        this[targetKey] += this[sourceKey][i];
-        await new Promise((resolve) => setTimeout(resolve, delay));
+
+    importGraph(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const graphData = JSON.parse(e.target.result);
+            this.nodes = graphData.nodes || [];
+            this.edges = graphData.edges || [];
+            this.updateAdjacencyMatrix();
+            this.updateNetwork();
+          } catch (error) {
+            alert("El archivo no es un JSON válido.");
+          }
+        };
+        reader.readAsText(file);
       }
-    },
-    transitionToRegisterPage() {
-      gsap.to(".graph", {
-        opacity: 0,
-        scale: 0.9,
-        duration: 1.5,
-        ease: "power3.inOut",
-      });
     },
 
     createNetwork() {
@@ -138,120 +97,140 @@ export default {
         interaction: {
           hover: true,
         },
+        physics: {
+          enabled: false,
+          stabilization: { iterations: 100 },
+        },
         edges: {
           arrows: { to: true }, 
-      font: { align: "top" },
+          font: { align: "top" },
         },
         manipulation: {
           enabled: true,
           addNode: this.addNode,
           addEdge: this.addEdge,
-          editNode: (data, callback) => {
-  const modal = document.createElement("div");
-  modal.style.position = "fixed";
-  modal.style.top = "50%";
-  modal.style.left = "50%";
-  modal.style.transform = "translate(-50%, -50%)";
-  modal.style.background = "#fff";
-  modal.style.padding = "20px";
-  modal.style.boxShadow = "0px 4px 8px rgba(0, 0, 0, 0.2)";
-  modal.style.borderRadius = "8px";
-  modal.style.zIndex = "1000";
-  modal.style.textAlign = "center";
-  const title = document.createElement("h3");
-  title.innerText = "Selecciona un color";
-  title.style.color = "black";
-  modal.appendChild(title);
-  const colorPicker = document.createElement("input");
-  colorPicker.type = "color";
-  colorPicker.value = data.color || "#ff0000";
-  colorPicker.style.margin = "10px";
-  modal.appendChild(colorPicker);
-  const saveButton = document.createElement("button");
-  saveButton.innerText = "Guardar";
-  saveButton.style.margin = "5px";
-  saveButton.style.padding = "8px 12px";
-  saveButton.style.border = "none";
-  saveButton.style.background = "#4CAF50";
-  saveButton.style.color = "white";
-  saveButton.style.borderRadius = "5px";
-  saveButton.style.cursor = "pointer";
-  
-  saveButton.addEventListener("click", () => {
-    data.color = colorPicker.value;
-    document.body.removeChild(modal);
-    callback(data);
-  });
-  const cancelButton = document.createElement("button");
-  cancelButton.innerText = "Cancelar";
-  cancelButton.style.margin = "5px";
-  cancelButton.style.padding = "8px 12px";
-  cancelButton.style.border = "none";
-  cancelButton.style.background = "#f44336";
-  cancelButton.style.color = "white";
-  cancelButton.style.borderRadius = "5px";
-  cancelButton.style.cursor = "pointer";
-
-  cancelButton.addEventListener("click", () => {
-    document.body.removeChild(modal);
-    callback(data); 
-  });
-  modal.appendChild(saveButton);
-  modal.appendChild(cancelButton);
-  document.body.appendChild(modal);
-},
-
-          deleteNode: (data, callback) => {
-        const nodeId = data.nodes[0]; 
-        this.nodes = this.nodes.filter(node => node.id !== nodeId);
-        this.edges = this.edges.filter(edge => edge.from !== nodeId && edge.to !== nodeId);
-        this.updateAdjacencyMatrix();
-        callback(data);
-      },
-      deleteEdge: (data, callback) => {
-        const edgeId = data.edges[0]; 
-        this.edges = this.edges.filter(edge => edge.id !== edgeId);
-        this.updateAdjacencyMatrix();
-        callback(data);
-      },
+          editNode: this.editNode,
+          deleteNode: this.deleteNode,
+          deleteEdge: this.deleteEdge,
         },
       };
       const container = document.getElementById("graph");
       this.network = new Network(container, { nodes: this.nodes, edges: this.edges }, options);
     },
+      
     addNode(data, callback) {
-  const name = prompt("Ingresa el nombre del nodo:");
-  if (name) {
-    const nodeExists = this.nodes.some(node => node.label === name);
-    
-    if (nodeExists) {
-      alert("Ya existe un nodo con ese nombre. Por favor, elige otro.");
-      return;e
-    }
-    data.label = name;
-    data.color = this.nodeColor;
-    this.nodes.push(data); 
-    callback(data); 
-    this.updateAdjacencyMatrix();
-  }
-},
+      const name = prompt("Ingresa el nombre del nodo:");
+      if (name) {
+        const nodeExists = this.nodes.some(node => node.label === name);
+        if (nodeExists) {
+          alert("Ya existe un nodo con ese nombre. Por favor, elige otro.");
+          return;
+        }
+      data.label = name;
+      data.color = this.nodeColor;
+      this.nodes.push(data); 
+      callback(data); 
+      this.updateAdjacencyMatrix();
+      }
+    },  
 
-addEdge(data, callback) {
+    deleteNode(data, callback) {
+      const nodeId = data.nodes[0]; 
+      this.nodes = this.nodes.filter(node => node.id !== nodeId);
+      this.edges = this.edges.filter(edge => edge.from !== nodeId && edge.to !== nodeId);
+      this.updateAdjacencyMatrix();
+      callback(data);
+    },
+
+    deleteEdge(data, callback) {
+      const edgeId = data.edges[0]; 
+      this.edges = this.edges.filter(edge => edge.id !== edgeId);
+      this.updateAdjacencyMatrix();
+      callback(data);
+    },
+
+    editNode(data, callback){
+      const modal = document.createElement("div");
+      modal.style.position = "fixed";
+      modal.style.top = "50%";
+      modal.style.left = "50%";
+      modal.style.transform = "translate(-50%, -50%)";
+      modal.style.background = "#fff";
+      modal.style.padding = "20px";
+      modal.style.boxShadow = "0px 4px 8px rgba(0, 0, 0, 0.2)";
+      modal.style.borderRadius = "8px";
+      modal.style.zIndex = "1000";
+      modal.style.textAlign = "center";
+
+      // Título del modal(DIV)
+      const title = document.createElement("h3");
+      title.innerText = "Selecciona un color";
+      title.style.color = "black";
+      modal.appendChild(title);
+
+      // Selector de color
+      const colorPicker = document.createElement("input");
+      colorPicker.type = "color";
+      colorPicker.value = data.color || "#ff0000";
+      colorPicker.style.margin = "10px";
+      modal.appendChild(colorPicker);
+
+      // Botón Guardar
+      const saveButton = document.createElement("button");
+      saveButton.innerText = "Guardar";
+      saveButton.style.margin = "5px";
+      saveButton.style.padding = "8px 12px";
+      saveButton.style.border = "none";
+      saveButton.style.background = "#4CAF50";
+      saveButton.style.color = "white";
+      saveButton.style.borderRadius = "5px";
+      saveButton.style.cursor = "pointer";
+
+      saveButton.addEventListener("click", () => {
+          data.color = colorPicker.value;
+          document.body.removeChild(modal);
+          callback(data);
+      });
+
+      // Botón Cancelar
+      const cancelButton = document.createElement("button");
+      cancelButton.innerText = "Cancelar";
+      cancelButton.style.margin = "5px";
+      cancelButton.style.padding = "8px 12px";
+      cancelButton.style.border = "none";
+      cancelButton.style.background = "#f44336";
+      cancelButton.style.color = "white";
+      cancelButton.style.borderRadius = "5px";
+      cancelButton.style.cursor = "pointer";
+
+      cancelButton.addEventListener("click", () => {
+          document.body.removeChild(modal);
+          callback(data);
+      });
+
+      // Agregar botones al modal
+      modal.appendChild(saveButton);
+      modal.appendChild(cancelButton);
+
+      // Mostrar el modal en la página
+      document.body.appendChild(modal);
+    },
+
+    addEdge(data, callback) {
       const weight = prompt("Ingresa el peso:");
       if (weight) {
-    const numericWeight = parseFloat(weight);
-
-    if (isNaN(numericWeight) || numericWeight <= 0) {
-      alert("Por favor, ingresa un número positivo para el peso.");
-      return; 
-    }
-      if (weight) {
-        data.label = weight;
-        this.edges.push(data); 
-        this.updateAdjacencyMatrix();
-        callback(data);
+        const numericWeight = parseFloat(weight);
+        if (isNaN(numericWeight) || numericWeight <= 0) {
+          alert("Por favor, ingresa un número positivo para el peso.");
+          return; 
+        }
+        if (weight) {
+          data.label = weight;
+          this.edges.push(data); 
+          this.updateAdjacencyMatrix();
+          callback(data);
+        }
       }
-    }
     },
 
     updateNetwork() {
@@ -260,59 +239,100 @@ addEdge(data, callback) {
       }
       this.createNetwork();
     },
-    clearGraph() {
-  this.nodes = [];
-  this.edges = [];
-  this.adjacencyMatrix = [];
-  this.matrixVisible = false; 
 
-  if (this.network) {
-    this.network.destroy(); 
-    this.network = null; 
-  }
-  const container = document.getElementById("graph");
-  container.innerHTML = ""; 
-  this.createNetwork();
-}
-,
-    generateAdjacencyMatrix() {
+    clearGraph() {
+      this.nodes = [];
+      this.edges = [];
+      this.adjacencyMatrix = [];
+      this.matrixVisible = false; 
+
+      if (this.network) {
+        this.network.destroy(); 
+        this.network = null; 
+      }
+      const container = document.getElementById("graph");
+      container.innerHTML = ""; 
+      this.createNetwork();
+    },
+
+    triggerAddNode() {
+      if (this.network && this.network.manipulation) {
+        this.network.manipulation.addNodeMode();
+      }
+    },
+
+    triggerAddEdge() {
+      if (this.network && this.network.manipulation) {
+        this.network.manipulation.addEdgeMode(); // Activa el modo de añadir arista
+      }
+    },
+
+    triggerEditNode() {
+      if (this.network && this.network.manipulation) {
+      this.network.manipulation.addEdgeMode(); // Activa el modo de añadir arista
+      }
+    },
+
+    triggerEditEdge() {
+      alert("Edit edge clicked");
+    },
+
+    triggerGenerateAdjacencyMatrix() {
       this.updateAdjacencyMatrix();
       this.matrixVisible = true; 
     },
+
+    triggerRemove() {
+      // Implement functionality to remove nodes or edges
+      alert("Remove clicked");
+    },
+
+    triggerClearAll() {
+      this.clearGraph(); // Clears all nodes and edges
+    },
+
     updateAdjacencyMatrix() {
-  const size = this.nodes.length;
-  this.adjacencyMatrix = [];
+      const size = this.nodes.length;
+      this.adjacencyMatrix = [];
 
-  for (let i = 0; i <= size; i++) {
-    const row = new Array(size + 1).fill(0);
-    this.adjacencyMatrix.push(row);
-  }
+      // Inicializa la matriz de adyacencia con ceros
+      for (let i = 0; i < size; i++) {
+        const row = new Array(size).fill(0);
+        this.adjacencyMatrix.push(row);
+      }
 
-this.edges.forEach(edge => {
-  const fromIndex = this.nodes.findIndex(node => node.id === edge.from);
-  const toIndex = this.nodes.findIndex(node => node.id === edge.to);
-  if (fromIndex !== -1 && toIndex !== -1) {
-    this.adjacencyMatrix[fromIndex][toIndex] = parseFloat(edge.label); 
-  }
-});
+      // Actualiza la matriz con las conexiones
+      this.edges.forEach(edge => {
+        const fromIndex = this.nodes.findIndex(node => node.id === edge.from);
+        const toIndex = this.nodes.findIndex(node => node.id === edge.to);
 
-  for (let i = 0; i < size; i++) {
-    let rowSum = 0;
-    let colSum = 0;
+        if (fromIndex !== -1 && toIndex !== -1) {
+          // Asigna el valor de la conexión en la matriz
+          this.adjacencyMatrix[fromIndex][toIndex] = parseFloat(edge.label);
+        }
+      });
 
-    for (let j = 0; j < size; j++) {
-      rowSum += this.adjacencyMatrix[i][j]; 
-      colSum += this.adjacencyMatrix[j][i]; 
-    }
+      // Calcula las sumas por fila y columna
+      for (let i = 0; i < size; i++) {
+        let rowSum = 0;
+        let colSum = 0;
 
-    this.adjacencyMatrix[i][size] = rowSum;
-    this.adjacencyMatrix[size][i] = colSum;
-  }
+        for (let j = 0; j < size; j++) {
+          rowSum += this.adjacencyMatrix[i][j];  // Suma de cada fila
+          colSum += this.adjacencyMatrix[j][i];  // Suma de cada columna
+        }
 
-  this.adjacencyMatrix[size][size] = this.adjacencyMatrix[size].reduce((acc, val) => acc + val, 0);
-}
+        // Se asignan las sumas de filas y columnas en la última columna/fila
+        this.adjacencyMatrix[i][size] = rowSum;
+        this.adjacencyMatrix[size] = this.adjacencyMatrix[size] || [];
+        this.adjacencyMatrix[size][i] = colSum;
+      }
 
-,
+      // Suma total de la última celda (suma de todas las conexiones)
+      this.adjacencyMatrix[size] = this.adjacencyMatrix[size] || [];
+      this.adjacencyMatrix[size][size] = this.adjacencyMatrix[size].reduce((acc, val) => acc + val, 0);
+    },
+
     showHelp() {
       this.helpVisible = !this.helpVisible;
     }
@@ -320,128 +340,110 @@ this.edges.forEach(edge => {
 };
 </script>
 
-<style scoped>
 
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Lora:wght@400;500&display=swap');
-
-
-.intro {
-  text-align: center;
+<style>
+.whole {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%); 
-  height: 100%;
+  background-color: rgb(255, 255, 255);
+  width: 100vw;
+  height: 100vh;
+  margin-top: 64px;
 }
 
-/* 🔹 Logo */
-.logo {
-  width: 30vw;  
-  max-width: 200px;  
-  margin-bottom: 10px;
-}
-
-.ucb-name {
-  font-size: 3vw; 
-  font-family: 'Poppins', sans-serif;  
-  font-weight: 800; 
-  background: linear-gradient(to right, #1e3c72 0%, #00aaff 40%, #ffc107 100%); 
-  -webkit-background-clip: text; 
-  color: transparent;  
-  margin: 0;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-  transition: transform 0.3s ease, text-shadow 0.3s ease;
-}
-
-.ucb-name:hover {
-  transform: scale(1.1); 
-  text-shadow: 4px 4px 10px rgba(0, 0, 0, 0.6);
-}
-
-
-.full-name {
-  font-size: 2.5vw; 
-  color: #37474f;
-  margin: 0;
-}
-
-
-.container {
+.optionsMenu {
   display: flex;
-  justify-content: space-between;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  background-color: antiquewhite;
+  width: 100vw;
+  padding: 10px;
+  gap: 10px;
+}
+
+.lienzo {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  width: 100%;
+  padding: 20px;
 }
 
 .graph {
-  width: 60%;
-  height: 600px;
-  border: 2px solid #444;
-  background-color: #f0f0f0;
-}
-
-.controls {
-  width: 35%;
-  padding: 20px;background-color: #3b8acc;
-
-}
-
-.button-container {
-  margin-bottom: 20px;
-}
-
-button {
-  width: 100%;
-  padding: 10px;
-  margin: 5px;
-  background-color: #5c9ded;
-  border: none;
-  color: white;
-  cursor: pointer;
-}
-
-button:hover {
-  background-color: #3b8acc;
+  width: 50vw;
+  height: 80vh;
+  border: 1px solid #ccc;
+  border-radius: 8px;
 }
 
 .matrix {
-  margin-top: 20px;
+  font-family: 'Arial', sans-serif;
+  margin: 20px auto;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  width: 80%;
 }
 
-.matrix table {
+h3 {
+  text-align: center;
+  color: #4A90E2;
+  font-size: 24px;
+  margin-bottom: 15px;
+}
+
+table {
   width: 100%;
   border-collapse: collapse;
+  margin-top: 10px;
 }
 
-.matrix th, .matrix td {
-  padding: 8px;
+th, td {
+  padding: 12px;
   text-align: center;
-  border: 1px solid #ccc;
+  border: 1px solid #ddd;
+  font-size: 16px;
 }
 
-.help-modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: rgba(0, 0, 0, 0.8);
+th {
+  background-color: #4A90E2;
   color: white;
-  padding: 20px;
-  border-radius: 5px;
-  text-align: center;
+  font-weight: bold;
 }
 
-.close-btn {
-  background-color: red;
-  padding: 10px;
-  border: none;
-  color: white;
-  cursor: pointer;
+td {
+  background-color: #f1f1f1;
+  color: #333;
 }
 
-.close-btn:hover {
-  background-color: darkred;
+td span {
+  font-weight: bold;
 }
+
+td:not(:first-child) {
+  background-color: #e0e0e0;
+}
+
+tbody tr:hover {
+  background-color: #e9f7fb;
+}
+
+@media (max-width: 768px) {
+  .matrix {
+    width: 95%;
+    padding: 15px;
+  }
+
+  table {
+    font-size: 14px;
+  }
+
+  th, td {
+    padding: 8px;
+  }
+}
+
 </style>
