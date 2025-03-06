@@ -1,17 +1,17 @@
 <template>
   <div class="whole">
     <div class="optionsMenu">
-      <button @click="startNodeCreation">Añadir Nodo</button>
-      <button @click="clearGraph">Eliminar Todo</button>
-      <button @click="exportGraph">Exportar Grafo</button>
-      <button @click="importGraph">Importar Grafo</button>
-      <button @click="editNode">Editar Nodo</button>
-      <button @click="startEdgeCreation">Añadir Arista</button>
+      <v-btn variant="tonal" @click="startNodeCreation">Añadir Nodo</v-btn>
+      <v-btn variant="tonal" @click="startEdgeCreation">Añadir Arista</v-btn>
+      <v-btn variant="tonal" @click="editNode">Editar Nodo</v-btn>
+      <v-btn variant="tonal" @click="editEdge">Editar Arista</v-btn>
+      <v-btn variant="tonal" @click="clearGraph">Eliminar Todo</v-btn>
+      <v-btn variant="tonal" @click="deleteSelectedNode">Eliminar Nodo</v-btn>
+      <v-btn variant="tonal" @click="deleteSelectedEdge">Eliminar Arista</v-btn>
+      <v-btn variant="tonal" @click="calculateAdjacencyMatrix">Mostrar Matriz de Adyacencia</v-btn>
+      <v-btn variant="tonal" @click="exportGraph">Exportar Grafo</v-btn>
+      <v-btn variant="tonal" @click="importGraph">Importar Grafo</v-btn>
       <input type="file" @change="handleFileImport" />
-      <button @click="editEdge">Editar Arista</button>
-      <button @click="deleteSelectedNode">Eliminar Nodo</button>
-      <button @click="deleteSelectedEdge">Eliminar Arista</button>
-      <button @click="calculateAdjacencyMatrix">Mostrar Matriz de Adyacencia</button>
     </div>
     <div class="lienzo">
       <div ref="container" class="graph"></div>
@@ -49,6 +49,7 @@ export default {
     let adjacencyMatrix = ref([]);
     let matrixVisible = ref(false);
     let nodeList = ref([]);
+    const helpVisible = ref(false);
 
     onMounted(() => {
       const data = { nodes, edges };
@@ -56,7 +57,7 @@ export default {
         nodes: {
           shape: "circle",
           color: "blue",
-          font: { size: 16, background: "white" },
+          font: { size: 16},
           physics: false,
         },
         edges: {
@@ -76,7 +77,6 @@ export default {
           if (!edgeStartNode) {
             if (params.nodes.length > 0) {
               edgeStartNode = params.nodes[0];
-              alert("Seleccione el nodo destino para la arista");
             }
           } else {
             if (params.nodes.length > 0) {
@@ -98,7 +98,6 @@ export default {
 
     const startNodeCreation = () => {
       waitingForNodeClick = true;
-      alert("Haga clic en el área del grafo donde quiere agregar el nodo.");
     };
 
     const addNodeAtClick = (params) => {
@@ -163,7 +162,7 @@ export default {
 
     const editNode = () => {
       if (!selectedNode.value || !nodes.get(selectedNode.value)) {
-        alert("Seleccione un nodo para editar");
+
         return;
       }
       const newLabel = prompt("Ingrese la nueva etiqueta:", nodes.get(selectedNode.value).label);
@@ -173,12 +172,10 @@ export default {
 
     const startEdgeCreation = () => {
       if (!selectedNode.value) {
-        alert("Seleccione un nodo de inicio para la arista");
         return;
       }
       creatingEdge = true;
       edgeStartNode = null;
-      alert("Haga clic en un nodo para iniciar la arista y luego en otro para conectarlo");
     };
 
     const editEdge = () => {
@@ -235,10 +232,14 @@ export default {
       edges.remove(selectedEdges);
     };
 
+    function showHelp() {
+      helpVisible.value = !helpVisible.value;
+    }
+
     return { 
       container, startNodeCreation, clearGraph, exportGraph, importGraph, 
       handleFileImport, editNode, startEdgeCreation, editEdge, deleteSelectedNode, deleteSelectedEdge,
-      calculateAdjacencyMatrix, adjacencyMatrix, matrixVisible, nodeList
+      calculateAdjacencyMatrix, adjacencyMatrix, matrixVisible, nodeList, helpVisible, showHelp 
     };
   },
 };
@@ -257,10 +258,11 @@ export default {
 
 .optionsMenu {
   display: flex;
+  flex-wrap: wrap;
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  background-color: antiquewhite;
+  background-color: rgb(154, 220, 232);
   width: 100vw;
   padding: 10px;
   gap: 10px;
