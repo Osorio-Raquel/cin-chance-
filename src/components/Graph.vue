@@ -8,7 +8,7 @@
       <v-btn variant="tonal" @click="clearGraph">Eliminar Todo</v-btn>
       <v-btn variant="tonal" @click="deleteSelectedNode">Eliminar Nodo</v-btn>
       <v-btn variant="tonal" @click="deleteSelectedEdge">Eliminar Arista</v-btn>
-      <v-btn variant="tonal" @click="calculateAdjacencyMatrix">Mostrar Matriz de Adyacencia</v-btn>
+      <v-btn variant="tonal" @click="matrixVisible=true">Mostrar Matriz de Adyacencia</v-btn>
       <v-btn variant="tonal" @click="exportGraph">Exportar Grafo</v-btn>
       <v-btn variant="tonal" @click="importGraph">Importar Grafo</v-btn>
       <input type="file" @change="handleFileImport" />
@@ -38,13 +38,14 @@
 </template>
 
 <script>
-import { defineComponent, onMounted, ref,computed } from "vue";
+import { defineComponent, onMounted, ref,computed,watch } from "vue";
 import { Network } from "vis-network/standalone";
 import { useGraphStore } from "../stores/graphStores";
 
 export default{
   setup() {
     const container = ref(null);
+
 
 const adjacencyMatrix = computed(() => graphStore.adjacencyMatrix.value);
 
@@ -60,7 +61,13 @@ let network =null;
 
     // Usar el store de Pinia
     const graphStore = useGraphStore();
+    watch(() => graphStore.nodes.get(), () => {
+  calculateAdjacencyMatrix();
+});
 
+watch(() => graphStore.edges.get(), () => {
+  calculateAdjacencyMatrix();
+});
     onMounted(() => {
 
       const data = {
@@ -98,13 +105,32 @@ let network =null;
             if (params.nodes.length > 0) {
               const weight = prompt("Ingrese el peso de la arista:", "1");
               if (weight !== null) {
-                graphStore.edges.add({
-                  from: edgeStartNode,
-                  to: params.nodes[0],
-                  label: weight,
-                  arrows: "to",
-                });
-              }
+  const targetNode = params.nodes[0];
+
+  if (edgeStartNode === targetNode) {
+    alert("No se puede crear una arista que conecte el nodo consigo mismo.");
+    return;
+  }
+
+  // Verificar si ya existe una arista inversa
+  const existingEdges = graphStore.edges.get();
+  const reverseEdgeExists = existingEdges.some(edge =>
+    edge.from === targetNode && edge.to === edgeStartNode
+  );
+
+  if (reverseEdgeExists) {
+    alert("Ya existe una arista en dirección contraria. No se puede crear una arista bidireccional para jhonson.");
+    return;
+  }
+
+  graphStore.edges.add({
+    from: edgeStartNode,
+    to: targetNode,
+    label: weight,
+    arrows: "to",
+  });
+}
+
               edgeStartNode = null;
               creatingEdge = false;
             }
@@ -271,7 +297,6 @@ let network =null;
 
       graphStore.adjacencyMatrix.value = matrix;
 
-      matrixVisible.value=true;
     };
 
     const exportGraph = () => {
